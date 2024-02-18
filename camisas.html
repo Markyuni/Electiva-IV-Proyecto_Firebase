@@ -5,28 +5,50 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Proyecto de Ventas</title>
+	<link rel="stylesheet" type="text/css" href="camisas.css">
 </head>
 
 <body>
-	<form>
-		<div id="camisaNombre">
+	<h1>Camisas</h1>
+	
+	<div>
+		<h2>Añadir una camisa</h2>
+		<form class="añadir">
 			<label for="camisaNombre">Color de la Camisa</label>
-			<input type="text" name="camisaColor">
-		</div>
-		<div>
+			<input type="text" name="color" required>
 			<label for="camisaPrecio">Precio de la Camisa</label>
-			<input type="text" name="camisaPrecio">
-		</div>
-		<button type="button" id="submitData" name="submitData">Ingresar datos</button>
-	</form>
+			<input type="text" name="precio" required>
 
-	<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+			<button>Añada una camisa</button>
+		</form>
+		<hr>
+		<h2>Borrar una camisa</h2>
+		<form class="borrar">
+			<label for="id">Id de la Camisa</label>
+			<input type="text" name="id" required>
 
-	<script>
+			<button>Borre una camisa</button>
+		</form>
+		<hr>
+		<h2>Actualizar una camisa</h2>
+		<form class="actualizar">
+			<label for="id">Id de la Camisa</label>
+			<input type="text" name="id" required>
+			<label for="camisaNombre">Color de la Camisa</label>
+			<input type="text" name="color" required>
+			<label for="camisaPrecio">Precio de la Camisa</label>
+			<input type="text" name="precio" required>
 
+			<button>Actualice una camisa</button>	
+		</form>
+
+		<ul id="lista"></ul>
+	</div>
+
+	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-		import { getFirestore, setDoc, addDoc, doc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+		import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+		import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 		const firebaseConfig = {
 		    apiKey: "AIzaSyALGgHtMVtVpaEdUKATDmZZL9IB8tYir78",
@@ -38,22 +60,71 @@
 		    measurementId: "G-NR3M1MR5DE"
 		};
 
-		const app = firebase.initializeApp(firebaseConfig);
+		const app = initializeApp(firebaseConfig);
+		const analytics = getAnalytics(app);
 		const db = getFirestore(app);
 
-		// ingresar datos
-		submitData.addEventListener('click', (e) => {
+		// obtener los datos de la coleccion
+		const colRef = collection(db, 'camisas');
 
-			var camisaColor = document.getElementById('camisaColor').value;
-			var camisaPrecio = document.getElementById('camisaPrecio').value;
+		//colecciones de datos en tiempo real
+		onSnapshot(colRef, (snapshot) => {
+			let camisas = [];
 
-			addDoc(collection(db, "productos"), {
-				camisaColor: camisaColor,
-				camisaPrecio: camisaPrecio
+			snapshot.docs.forEach(doc => {
+				camisas.push({ ...doc.data(), id: doc.id });
 			});
-
-			alert("Usuario añadido con exito");
+			console.log(camisas);
 		});
+
+		// añadir datos
+		const añadirCamisas = document.querySelector('.añadir');
+		
+		añadirCamisas.addEventListener('submit', (e) => {
+			e.preventDefault();
+
+			addDoc(colRef, {
+				color: añadirCamisas.color.value,
+				precio: añadirCamisas.precio.value,
+				createdAt: serverTimestamp()
+			})
+			.then(() => {
+				alert("Se ha añadido una camisa.");
+				añadirCamisas.reset();
+			});
+		});
+
+		// borrar datos
+		const borrarCamisas = document.querySelector('.borrar');
+		
+		borrarCamisas.addEventListener('submit', (e) => {
+			e.preventDefault();
+
+			const docRef = doc(db, 'camisas', borrarCamisas.id.value);
+			
+			deleteDoc(docRef)
+			.then(() => {
+				alert("Se ha eliminado una camisa.");
+				borrarCamisas.reset();
+			});
+		});
+
+		// actualizar datos
+		const actualizarCamisas = document.querySelector('.actualizar');
+		actualizarCamisas.addEventListener('submit', (e) => {
+			e.preventDefault();
+
+			let docRef = doc(db, 'camisas', actualizarCamisas.id.value);
+
+			updateDoc(docRef, {
+				color: actualizarCamisas.color.value,
+				precio: actualizarCamisas.precio.value 
+			})
+			.then(() => {
+				alert("Se ha actualizado una camisa.")
+				actualizarCamisas.reset()
+			})
+		})
 	</script>
 </body>
 
